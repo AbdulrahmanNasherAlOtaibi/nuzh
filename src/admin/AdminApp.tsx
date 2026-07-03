@@ -96,7 +96,7 @@ function Dashboard() {
 
       <div className="grid lg:grid-cols-3 gap-3 mt-3">
         {[
-          { title: "آخر الشركات المضافة", rows: data.recentCompanies.map((c: any) => [c.type === "company" ? "🏢" : "🧭", c.name, c.status]) },
+          { title: "آخر الشركات المضافة", rows: data.recentCompanies.map((c: any) => [c.type === "company" ? "🏢" : "🧭", c.name, c.status === "active" ? "نشطة" : c.status === "pending" ? "قيد المراجعة" : c.status]) },
           { title: "آخر الحجوزات", rows: data.recentBookings.map((b: any) => ["🎫", `${b.user_name} — ${b.title}`, `${b.total} ر.س`]) },
           { title: "آخر الشكاوى", rows: data.recentComplaints.map((c: any) => ["⚠️", `${c.user_name} — ${c.type}`, c.priority === "high" ? "عالية" : c.priority === "medium" ? "متوسطة" : "منخفضة"]) },
         ].map((box) => (
