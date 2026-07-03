@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky7" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d4a44"/><stop offset="0.55" stop-color="#4f8f70"/><stop offset="0.9" stop-color="#d8d2a0"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fc0c9"/><stop offset="1" stop-color="#3a7f8f"/></linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#sky7)"/>
+  <circle cx="600" cy="120" r="44" fill="#fdf3cd" opacity="0.9"/>
+  <path d="M0 500 V350 Q 250 310 520 352 T 800 345 V500 Z" fill="#a8853c"/>
+  <ellipse cx="420" cy="430" rx="220" ry="42" fill="url(#water)"/>
+  <g fill="#1d3a26">
+    <path d="M240 372 q2 -40 -8 -62 q18 10 16 40 q10 -26 30 -30 q-16 16 -18 36 q16 -12 34 -8 q-22 8 -30 24 l-6 42 -12 0 z"/>
+    <path d="M580 380 q2 -34 -7 -52 q15 9 14 34 q8 -22 25 -25 q-13 13 -15 30 q13 -10 28 -7 q-18 7 -25 20 l-5 36 -10 0 z"/>
+  </g>
+  <path d="M0 500 V470 Q 400 452 800 468 V500 Z" fill="#6e5522"/>
+</svg>

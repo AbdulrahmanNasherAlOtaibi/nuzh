@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* خط Cairo — مستضاف محلياً */
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-arabic-400.woff2") format("woff2"); font-weight: 400; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-arabic-500.woff2") format("woff2"); font-weight: 500; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-arabic-600.woff2") format("woff2"); font-weight: 600; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-arabic-700.woff2") format("woff2"); font-weight: 700; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-arabic-800.woff2") format("woff2"); font-weight: 800; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-arabic-900.woff2") format("woff2"); font-weight: 900; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-latin-400.woff2") format("woff2"); font-weight: 400; unicode-range: U+0000-00FF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-latin-500.woff2") format("woff2"); font-weight: 500; unicode-range: U+0000-00FF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-latin-600.woff2") format("woff2"); font-weight: 600; unicode-range: U+0000-00FF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-latin-700.woff2") format("woff2"); font-weight: 700; unicode-range: U+0000-00FF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-latin-800.woff2") format("woff2"); font-weight: 800; unicode-range: U+0000-00FF; font-display: swap; }
+@font-face { font-family: "Cairo"; src: url("./assets/fonts/cairo-latin-900.woff2") format("woff2"); font-weight: 900; unicode-range: U+0000-00FF; font-display: swap; }
+
+:root { color-scheme: dark; }
+html.light { color-scheme: light; }
+
+body {
+  @apply font-cairo antialiased bg-sand-50 text-night-900;
+}
+.dark body {
+  @apply bg-night-950 text-sand-100;
+}
+
+/* بطاقات وأزرار الهوية */
+.card {
+  @apply rounded-2xl border bg-white border-sand-200 shadow-sm;
+}
+.dark .card {
+  @apply bg-night-800 border-night-600/50 shadow-none;
+}
+.gold-frame {
+  @apply border border-gold-500/60 rounded-2xl;
+}
+.btn-gold {
+  @apply bg-gradient-to-b from-gold-400 to-gold-600 text-night-950 font-bold rounded-xl px-4 py-2.5 active:scale-[0.98] transition disabled:opacity-50;
+}
+.btn-outline {
+  @apply border border-gold-500/70 text-gold-600 dark:text-gold-400 font-bold rounded-xl px-4 py-2.5 active:scale-[0.98] transition;
+}
+.chip {
+  @apply shrink-0 rounded-xl px-4 py-2 text-sm font-bold border transition
+    bg-white border-sand-200 text-night-800
+    dark:bg-night-800 dark:border-night-600/60 dark:text-sand-100;
+}
+.chip-active {
+  @apply bg-sand-100 border-gold-500 text-night-900 dark:bg-gold-500 dark:text-night-950 dark:border-gold-500;
+}
+.input {
+  @apply w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition
+    bg-white border-sand-200 focus:border-gold-500 text-night-900 placeholder:text-night-900/40
+    dark:bg-night-900 dark:border-night-600/60 dark:text-sand-50 dark:placeholder:text-sand-100/30 dark:focus:border-gold-500;
+}
+.label {
+  @apply block text-xs font-bold mb-1 opacity-70;
+}
+
+::-webkit-scrollbar { height: 6px; width: 6px; }
+::-webkit-scrollbar-thumb { @apply bg-gold-600/40 rounded-full; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Leaflet داخل الثيم */
+.leaflet-container { font-family: inherit; }

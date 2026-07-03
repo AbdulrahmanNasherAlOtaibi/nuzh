@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#173325"/><stop offset="0.6" stop-color="#3f6b45"/><stop offset="0.95" stop-color="#c9c07f"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#sky4)"/>
+  <circle cx="640" cy="120" r="36" fill="#f3ecd0" opacity="0.85"/>
+  <path d="M0 500 V370 Q 250 330 500 372 T 800 368 V500 Z" fill="#5a5230"/>
+  <path d="M0 500 V430 Q 400 405 800 432 V500 Z" fill="#3c3a20"/>
+  <g fill="#20301f">
+    <path d="M150 300 q6 -30 -2 -52 q16 12 14 52 q22 -8 34 6 q-26 4 -30 18 l-6 46 -10 0 z"/>
+  </g>
+  <g fill="#2b241a">
+    <!-- gazelle -->
+    <path d="M420 384 c-2 -3 -2 -7 1 -9 l6 -3 c-1 -6 2 -11 8 -12 l16 -2 c6 -1 11 3 12 9 c1 5 -2 9 -6 11 l-2 1 1 14 -4 0 -2 -12 -14 2 -2 10 -4 0 0 -11 z"/>
+    <path d="M446 355 c1 -6 0 -11 -3 -15 l3 -1 c3 4 4 10 3 16 z M452 355 c1 -5 0 -10 -2 -13 l3 -1 c2 4 3 9 2 14 z"/>
+    <!-- bird -->
+    <path d="M560 300 q10 -12 24 -6 q-8 2 -10 8 q14 -4 20 6 q-10 -2 -16 2 l-8 14 -6 -2 4 -12 q-6 0 -8 -10 z"/>
+    <path d="M610 320 q8 -9 19 -5 q-6 2 -8 6 q11 -3 16 5 q-8 -2 -13 2 l-6 11 -5 -2 3 -9 q-5 0 -6 -8 z"/>
+  </g>
+</svg>

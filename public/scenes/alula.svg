@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#31203a"/><stop offset="0.45" stop-color="#a05a44"/><stop offset="0.75" stop-color="#e8a45e"/>
+    </linearGradient>
+    <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4a30"/><stop offset="1" stop-color="#4a2b1c"/></linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#sky3)"/>
+  <circle cx="250" cy="180" r="55" fill="#ffe1ad"/>
+  <path d="M60 420 V260 q0 -30 26 -30 q24 0 24 30 l0 40 30 0 0 -90 q0 -26 24 -26 q26 0 26 26 V420 Z" fill="url(#rock)"/>
+  <path d="M470 420 V230 q0 -40 34 -40 q32 0 32 40 l0 60 26 0 0 -110 q0 -30 28 -30 q30 0 30 30 V420 l60 0 0 -140 q0 -24 22 -24 q22 0 22 24 V420 Z" fill="url(#rock)"/>
+  <ellipse cx="560" cy="270" rx="26" ry="34" fill="#31203a" opacity="0.85"/>
+  <path d="M0 500 V420 Q 400 395 800 420 V500 Z" fill="#3a2213"/>
+  <g fill="#2b1810">
+    <path d="M300 430 c0 -8 6 -13 12 -13 c2 -8 10 -12 17 -9 c4 -6 14 -6 18 1 c7 -1 12 4 12 10 l0 11 z"/>
+  </g>
+</svg>

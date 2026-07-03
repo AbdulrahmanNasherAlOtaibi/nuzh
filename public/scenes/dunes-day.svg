@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky6" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2e6f8f"/><stop offset="0.6" stop-color="#8fc0cf"/><stop offset="0.9" stop-color="#efe3c0"/>
+    </linearGradient>
+    <linearGradient id="d3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0b268"/><stop offset="1" stop-color="#b3812f"/></linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#sky6)"/>
+  <circle cx="170" cy="110" r="40" fill="#fff8dd"/>
+  <path d="M0 330 Q 250 260 520 320 T 800 300 V500 H0 Z" fill="#caa04f"/>
+  <path d="M0 390 Q 300 330 620 385 T 800 375 V500 H0 Z" fill="url(#d3)"/>
+  <path d="M0 460 Q 400 420 800 455 V500 H0 Z" fill="#8a5f22"/>
+  <g fill="#6e4a1c">
+    <!-- camel caravan -->
+    <path d="M330 388 c0 -6 4 -10 9 -10 c1 -7 7 -11 13 -9 c2 -5 9 -6 13 -2 c5 -3 11 0 12 6 l0 4 c4 0 7 3 7 7 l0 4 -8 0 -2 14 -4 0 -1 -13 -20 0 -2 13 -4 0 -1 -13 -8 0 z"/>
+    <path d="M430 392 c0 -5 3 -8 7 -8 c1 -6 6 -9 11 -7 c2 -4 7 -5 10 -2 c4 -2 9 0 10 5 l0 3 c3 0 6 2 6 6 l0 3 -7 0 -1 11 -3 0 -1 -10 -16 0 -2 10 -3 0 -1 -10 -6 0 z"/>
+  </g>
+</svg>
