@@ -257,7 +257,7 @@ export function ContentSection() {
 
       {tab === "articles" && (
         <div>
-          <button onClick={() => setArtModal({ kind: "article", title: "", body: "", image: "/scenes/oasis.svg", author: "فريق نزهة" })} className="btn-gold text-xs mb-3">+ محتوى جديد</button>
+          <button onClick={() => setArtModal({ kind: "article", title: "", body: "", image: "/scenes/oasis.svg", author: "فريق نُزه" })} className="btn-gold text-xs mb-3">+ محتوى جديد</button>
           <Table
             headers={["النوع", "العنوان", "الكاتب", "التاريخ", "إجراءات"]}
             rows={data.contents.map((c: any) => [

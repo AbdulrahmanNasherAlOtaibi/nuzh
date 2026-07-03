@@ -19,7 +19,7 @@ export default function Auth() {
       if (tab === "login") await post("/auth/login", { email: f.email, password: f.password });
       else await post("/auth/register", f);
       await refresh();
-      toast(tab === "login" ? "أهلاً بعودتك 🌿" : "أهلاً بك في نزهة 🌿");
+      toast(tab === "login" ? "أهلاً بعودتك 🌿" : "أهلاً بك في نُزه 🌿");
       nav(next);
     } catch (e: any) {
       toast(e.message, "err");
@@ -32,7 +32,7 @@ export default function Auth() {
     <div className="px-4 max-w-md mx-auto pt-8 pb-6">
       <div className="text-center mb-6">
         <div className="flex justify-center"><Logo size={84} /></div>
-        <h1 className="font-black text-2xl mt-2 text-gold-600 dark:text-gold-400">نُزهة</h1>
+        <h1 className="font-black text-2xl mt-2 text-gold-600 dark:text-gold-400">نُزه</h1>
         <p className="text-xs font-bold opacity-55">السياحة البيئية في المحميات — Wildlife Tourism</p>
       </div>
 

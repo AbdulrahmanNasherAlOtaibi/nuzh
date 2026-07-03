@@ -325,7 +325,7 @@ export function adminRouter(): Router {
   });
 
   r.post("/contents", (req, res) => {
-    const { kind = "article", title = "", body = "", image = "/scenes/oasis.svg", author = "فريق نزهة" } = req.body || {};
+    const { kind = "article", title = "", body = "", image = "/scenes/oasis.svg", author = "فريق نُزه" } = req.body || {};
     if (!title) return res.status(400).json({ error: "العنوان مطلوب" });
     const info = db.prepare("INSERT INTO contents (kind,title,body,image,author,created_at) VALUES (?,?,?,?,?,?)").run(kind, title, body, image, author, now());
     res.json({ id: Number(info.lastInsertRowid) });
@@ -484,7 +484,7 @@ export function adminRouter(): Router {
     const tables = ["users", "providers", "reserves", "trips", "bookings", "reviews", "complaints", "ads", "contents", "permits", "promotions", "achievements", "partners", "transactions", "staff", "settings"];
     const dump: Record<string, any[]> = {};
     for (const t of tables) dump[t] = db.prepare(`SELECT * FROM ${t}`).all();
-    res.setHeader("Content-Disposition", `attachment; filename="nuzha-backup-${now().slice(0, 10)}.json"`);
+    res.setHeader("Content-Disposition", `attachment; filename="nuzh-backup-${now().slice(0, 10)}.json"`);
     res.json({ exportedAt: now(), tables: dump });
   });
 

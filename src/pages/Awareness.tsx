@@ -19,8 +19,8 @@ export default function Awareness() {
     get(`/content?kind=${kind}`).then((d) => {
       setItems(d.items);
       // إنجاز «صديق البيئة» — عدّاد قراءة محلي
-      const read = Number(localStorage.getItem("nuzha_reads") || 0);
-      localStorage.setItem("nuzha_reads", String(read + 1));
+      const read = Number(localStorage.getItem("nuzh_reads") || 0);
+      localStorage.setItem("nuzh_reads", String(read + 1));
     }).catch(() => setItems([]));
   }, [kind]);
 

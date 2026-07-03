@@ -89,7 +89,7 @@ export function PartnersFooter({ partners }: { partners: { id: number; name: str
           </div>
         ))}
       </div>
-      <p className="text-[10px] opacity-40 mt-5">نُزهة © {new Date().getFullYear()} — السياحة البيئية في المحميات 🇸🇦</p>
+      <p className="text-[10px] opacity-40 mt-5">نُزه © {new Date().getFullYear()} — السياحة البيئية في المحميات 🇸🇦</p>
     </footer>
   );
 }

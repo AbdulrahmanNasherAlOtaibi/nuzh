@@ -25,11 +25,11 @@ if (fs.existsSync(publicDir)) {
   app.get("*", (_req, res) => res.sendFile(path.join(publicDir, "index.html")));
 } else {
   app.get("/", (_req, res) =>
-    res.type("text").send("Nuzha API تعمل ✅ — ابنِ الواجهة أولاً: npm run build ثم أعد التشغيل، أو استخدم npm run dev للتطوير.")
+    res.type("text").send("Nuzh API تعمل ✅ — ابنِ الواجهة أولاً: npm run build ثم أعد التشغيل، أو استخدم npm run dev للتطوير.")
   );
 }
 
 const port = Number(process.env.PORT || 5001);
 app.listen(port, "0.0.0.0", () => {
-  console.log(`🌿 نُزهة تعمل على http://localhost:${port}`);
+  console.log(`🌿 نُزه تعمل على http://localhost:${port}`);
 });

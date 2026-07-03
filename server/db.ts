@@ -5,7 +5,7 @@ import path from "node:path";
 const dataDir = path.join(process.cwd(), "data");
 fs.mkdirSync(dataDir, { recursive: true });
 
-export const db = new Database(path.join(dataDir, "nuzha.db"));
+export const db = new Database(path.join(dataDir, "nuzh.db"));
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS contents (
   title TEXT NOT NULL,
   body TEXT DEFAULT '',
   image TEXT DEFAULT '',
-  author TEXT DEFAULT 'فريق نزهة',
+  author TEXT DEFAULT 'فريق نُزه',
   status TEXT NOT NULL DEFAULT 'active',
   created_at TEXT NOT NULL
 );

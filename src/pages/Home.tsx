@@ -47,16 +47,39 @@ export default function Home() {
       </div>
 
       {/* رحلات يحبها الضيوف */}
-      <SectionTitle title={t("lovedTrips")} action={t("viewAll")} onAction={() => nav("/explore")} />
-      <TripRow trips={data.loved} badge={(tr) => (tr.id === data.loved[0]?.id ? t("mostBooked") : undefined)} />
+      {data.loved.length > 0 && (
+        <>
+          <SectionTitle title={t("lovedTrips")} action={t("viewAll")} onAction={() => nav("/explore")} />
+          <TripRow trips={data.loved} badge={(tr) => (tr.id === data.loved[0]?.id && tr.bookings_count > 0 ? t("mostBooked") : undefined)} />
+        </>
+      )}
 
       {/* أعلى الرحلات تقييماً */}
-      <SectionTitle title={t("topRated")} action={t("viewAll")} onAction={() => nav("/explore?sort=rating")} />
-      <TripRow trips={data.topRated} badge={(tr) => (tr.rating >= 4.9 ? t("featured") : undefined)} />
+      {data.topRated.length > 0 && (
+        <>
+          <SectionTitle title={t("topRated")} action={t("viewAll")} onAction={() => nav("/explore?sort=rating")} />
+          <TripRow trips={data.topRated} badge={(tr) => (tr.rating >= 4.9 ? t("featured") : undefined)} />
+        </>
+      )}
 
       {/* عروض نهاية الأسبوع */}
-      <SectionTitle title={t("weekendOffers")} action={t("viewAll")} onAction={() => nav("/explore?filter=weekend")} />
-      <TripRow trips={data.weekend} />
+      {data.weekend.length > 0 && (
+        <>
+          <SectionTitle title={t("weekendOffers")} action={t("viewAll")} onAction={() => nav("/explore?filter=weekend")} />
+          <TripRow trips={data.weekend} />
+        </>
+      )}
+
+      {data.loved.length === 0 && (
+        <div className="card p-6 mt-7 text-center">
+          <div className="text-3xl mb-2">🌿</div>
+          <h3 className="font-black">الرحلات قادمة قريباً</h3>
+          <p className="text-xs font-bold opacity-60 mt-1 leading-5">
+            نستقبل الآن انضمام الشركات السياحية والمرشدين المعتمدين — وأول ما تُعتمد رحلاتهم ستجدها هنا.
+          </p>
+          <button onClick={() => nav("/provider")} className="btn-outline mt-4 text-xs">🏢 سجّل كمزود خدمة</button>
+        </div>
+      )}
 
       <button onClick={() => nav("/explore")} className="btn-outline w-full mt-7">{t("exploreTrips")}</button>
 

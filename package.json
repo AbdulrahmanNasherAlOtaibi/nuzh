@@ -1,9 +1,9 @@
 {
-  "name": "nuzha",
+  "name": "nuzh",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "نُزهة — منصة السياحة البيئية في المحميات الملكية | Nuzha Wildlife Tourism Platform",
+  "description": "نُزه — منصة السياحة البيئية في المحميات الملكية | Nuzh Wildlife Tourism Platform",
   "scripts": {
     "dev": "concurrently -k \"tsx watch server/index.ts\" \"vite\"",
     "build": "vite build",

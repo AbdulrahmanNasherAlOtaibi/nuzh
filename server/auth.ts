@@ -35,7 +35,7 @@ declare module "express-serve-static-core" {
   }
 }
 
-const COOKIE = "nuzha_sid";
+const COOKIE = "nuzh_sid";
 
 export function attachUser(req: Request, _res: Response, next: NextFunction) {
   const cookie = req.headers.cookie || "";

@@ -82,7 +82,7 @@ export default function Provider() {
         <div className="text-center mb-5">
           <span className="text-4xl">🏢</span>
           <h1 className="font-black text-xl mt-1 text-gold-600 dark:text-gold-400">بوابة مزودي الخدمة</h1>
-          <p className="text-xs font-bold opacity-55 mt-1">انضم إلى نزهة كشركة سياحية أو مرشد سياحي وابدأ باستقبال الحجوزات</p>
+          <p className="text-xs font-bold opacity-55 mt-1">انضم إلى نُزه كشركة سياحية أو مرشد سياحي وابدأ باستقبال الحجوزات</p>
         </div>
 
         {user && (
@@ -120,7 +120,7 @@ export default function Provider() {
             <button onClick={submitAuth} disabled={busy} className="btn-gold w-full py-3">
               {busy ? "لحظات…" : mode === "login" ? "دخول" : "إرسال طلب الانضمام"}
             </button>
-            {mode === "register" && <p className="text-[10px] font-bold opacity-50 leading-4">يُراجع الطلب من إدارة نزهة ويُفعّل بعد التحقق من الترخيص السياحي.</p>}
+            {mode === "register" && <p className="text-[10px] font-bold opacity-50 leading-4">يُراجع الطلب من إدارة نُزه ويُفعّل بعد التحقق من الترخيص السياحي.</p>}
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function Provider() {
 
       {provider!.status === "pending" && (
         <p className="text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 mt-3">
-          ⏳ حسابك قيد مراجعة إدارة نزهة — يمكنك تجهيز رحلاتك وستُنشر فور التفعيل.
+          ⏳ حسابك قيد مراجعة إدارة نُزه — يمكنك تجهيز رحلاتك وستُنشر فور التفعيل.
         </p>
       )}
 

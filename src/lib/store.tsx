@@ -48,7 +48,7 @@ const DICT: Record<string, { ar: string; en: string }> = {
   language: { ar: "اللغة", en: "Language" },
   contact: { ar: "التواصل", en: "Contact" },
   learnMore: { ar: "لمعرفة المزيد", en: "Learn more" },
-  aboutNuzha: { ar: "عن نزهة", en: "About Nuzha" },
+  aboutNuzh: { ar: "عن نُزه", en: "About Nuzh" },
   faq: { ar: "الأسئلة الشائعة", en: "FAQ" },
   userGuide: { ar: "دليل المستخدم", en: "User guide" },
   providerPortal: { ar: "بوابة مزودي الخدمة", en: "Provider portal" },
@@ -92,8 +92,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [provider, setProvider] = useState<ProviderInfo | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [lang, setLangState] = useState<Lang>(() => (localStorage.getItem("nuzha_lang") as Lang) || "ar");
-  const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem("nuzha_theme") as Theme) || "dark");
+  const [lang, setLangState] = useState<Lang>(() => (localStorage.getItem("nuzh_lang") as Lang) || "ar");
+  const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem("nuzh_theme") as Theme) || "dark");
   const [toastState, setToastState] = useState<{ msg: string; kind: "ok" | "err" } | null>(null);
 
   const refresh = async () => {
@@ -112,7 +112,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     applyTheme(theme);
-    localStorage.setItem("nuzha_theme", theme);
+    localStorage.setItem("nuzh_theme", theme);
     if (theme === "system") {
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
       const fn = () => applyTheme("system");
@@ -124,7 +124,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-    localStorage.setItem("nuzha_lang", lang);
+    localStorage.setItem("nuzh_lang", lang);
   }, [lang]);
 
   const value = useMemo<Ctx>(

@@ -115,7 +115,7 @@ export default function TripDetails() {
 
         {/* التقييمات */}
         <h2 className="font-extrabold text-gold-600 dark:text-gold-400 mt-6 mb-2">التقييمات ({reviews.length})</h2>
-        <p className="text-[11px] opacity-50 font-bold mb-3">✅ التقييمات موثقة — لا يُقيّم إلا ضيف حجز الرحلة فعلياً عبر نزهة</p>
+        <p className="text-[11px] opacity-50 font-bold mb-3">✅ التقييمات موثقة — لا يُقيّم إلا ضيف حجز الرحلة فعلياً عبر نُزه</p>
         {reviews.length === 0 && <div className="card p-4 text-sm opacity-60 font-bold">لا توجد تقييمات بعد — كن أول من يجرب!</div>}
         <div className="space-y-2.5">
           {reviews.map((r) => (

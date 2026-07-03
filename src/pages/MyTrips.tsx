@@ -91,8 +91,8 @@ export default function MyTrips() {
   };
 
   const share = (b: Booking) => {
-    const text = `جربت «${b.title}» عبر منصة نزهة 🌿 — أنصحكم فيها!`;
-    if (navigator.share) navigator.share({ title: "نزهة", text, url: location.origin + `/trips/${b.trip_id}` }).catch(() => {});
+    const text = `جربت «${b.title}» عبر منصة نُزه 🌿 — أنصحكم فيها!`;
+    if (navigator.share) navigator.share({ title: "نُزه", text, url: location.origin + `/trips/${b.trip_id}` }).catch(() => {});
     else { navigator.clipboard.writeText(text + " " + location.origin + `/trips/${b.trip_id}`); toast("نُسخ رابط المشاركة"); }
   };
 
@@ -264,7 +264,7 @@ export default function MyTrips() {
 
       {/* نافذة التقييم */}
       <Modal open={!!reviewFor} onClose={() => setReviewFor(null)} title={`تقييم: ${reviewFor?.title || ""}`}>
-        <p className="text-[11px] font-bold opacity-55 mb-3">تقييمك موثوق لأنك حجزت هذه الرحلة فعلياً عبر نزهة ✅</p>
+        <p className="text-[11px] font-bold opacity-55 mb-3">تقييمك موثوق لأنك حجزت هذه الرحلة فعلياً عبر نُزه ✅</p>
         <div className="flex justify-center gap-1 mb-4" dir="ltr">
           {[1, 2, 3, 4, 5].map((i) => (
             <button key={i} onClick={() => setRating(i)} className={i <= rating ? "text-gold-500" : "text-gold-500 opacity-25"}>

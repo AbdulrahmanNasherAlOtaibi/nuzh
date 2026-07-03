@@ -100,7 +100,7 @@ export default function Account() {
       {/* لمعرفة المزيد */}
       <h2 className="font-extrabold text-gold-600 dark:text-gold-400 text-sm mt-5 mb-2">{t("learnMore")}</h2>
       <div className="card overflow-hidden">
-        <Row icon="leaf" label={t("aboutNuzha")} onClick={() => setModal("about")} />
+        <Row icon="leaf" label={t("aboutNuzh")} onClick={() => setModal("about")} />
         <Divider />
         <Row icon="msg" label={t("faq")} onClick={() => setModal("faq")} />
         <Divider />
@@ -138,7 +138,7 @@ export default function Account() {
         </div>
       </Modal>
 
-      <Modal open={modal === "about"} onClose={() => setModal("")} title={t("aboutNuzha")}>
+      <Modal open={modal === "about"} onClose={() => setModal("")} title={t("aboutNuzh")}>
         <p className="text-sm leading-7 opacity-85">{pub?.about}</p>
       </Modal>
 

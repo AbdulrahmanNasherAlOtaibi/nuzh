@@ -135,7 +135,7 @@ function AdminLogin() {
     <div className="min-h-dvh flex items-center justify-center px-4">
       <div className="card p-6 w-full max-w-sm text-center">
         <div className="flex justify-center"><Logo size={70} /></div>
-        <h1 className="font-black text-lg mt-2">لوحة تحكم نزهة</h1>
+        <h1 className="font-black text-lg mt-2">لوحة تحكم نُزه</h1>
         <p className="text-xs font-bold opacity-50 mb-5">الدخول للمشرفين فقط</p>
         <div className="space-y-3 text-start">
           <div><span className="label">الإيميل</span><input value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} className="input" dir="ltr" /></div>
@@ -175,7 +175,7 @@ export default function AdminApp() {
         <div className="flex items-center gap-2.5 px-4 py-4">
           <Logo size={40} />
           <div>
-            <div className="font-black text-sm">نُزهة</div>
+            <div className="font-black text-sm">نُزه</div>
             <div className="text-[10px] font-bold opacity-50">لوحة التحكم</div>
           </div>
         </div>

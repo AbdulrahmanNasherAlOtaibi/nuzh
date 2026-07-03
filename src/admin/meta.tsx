@@ -208,7 +208,7 @@ export function SettingsSection() {
           <h3 className="font-extrabold text-sm">إدارة النسخ الاحتياطية</h3>
           <p className="text-xs font-bold opacity-60 leading-5">
             تُصدَّر نسخة كاملة من بيانات المنصة (المستخدمون، الشركات، الرحلات، الحجوزات، المعاملات…) بصيغة JSON.
-            احتفظ بالنسخ في مكان آمن — قاعدة البيانات نفسها ملف <code dir="ltr">data/nuzha.db</code> ويمكن نسخه لاستعادة كل شيء.
+            احتفظ بالنسخ في مكان آمن — قاعدة البيانات نفسها ملف <code dir="ltr">data/nuzh.db</code> ويمكن نسخه لاستعادة كل شيء.
           </p>
           <a href="/api/admin/backup" download className="btn-gold inline-block text-sm">⬇️ تنزيل نسخة احتياطية الآن</a>
         </div>
