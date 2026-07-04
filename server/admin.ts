@@ -16,6 +16,12 @@ function last12Months(): string[] {
 export function adminRouter(): Router {
   const r = express.Router();
   r.use(requireAdmin);
+  r.use((req, res, next) => {
+    if (req.user!.must_change_password) {
+      return res.status(403).json({ error: "يجب تغيير كلمة المرور المؤقتة أولاً", mustChangePassword: true });
+    }
+    next();
+  });
 
   // 1️⃣ لوحة المعلومات
   r.get("/overview", (_req, res) => {

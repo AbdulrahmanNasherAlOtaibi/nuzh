@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { db, now, setSetting } from "./db.ts";
 import { hashPassword } from "./auth.ts";
 
@@ -17,11 +18,25 @@ export function seedIfEmpty() {
   const t = now();
 
   // ---------- حساب الأدمن ----------
-  // ⚠️ غيّر كلمة المرور فوراً بعد أول تسجيل دخول (الإعدادات والأمان > كلمة مرور الأدمن)
-  db.prepare(
-    `INSERT INTO users (name,email,phone,password,role,city,status,email_verified,created_at,last_active)
-     VALUES (?,?,?,?, 'admin','', 'active',1,?,?)`
-  ).run("إدارة نُزه", "admin@nuzh.sa", "", hashPassword("admin123"), t, t);
+  // لا بيانات دخول ثابتة بالكود — تُعرَّف عبر متغيرات البيئة وقت التشغيل فقط.
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (adminEmail) {
+    const generatedPassword = !process.env.ADMIN_PASSWORD;
+    const adminPassword = process.env.ADMIN_PASSWORD || crypto.randomBytes(9).toString("base64url");
+    db.prepare(
+      `INSERT INTO users (name,email,phone,password,role,city,status,email_verified,must_change_password,created_at,last_active)
+       VALUES (?,?,?,?, 'admin','', 'active',1,?,?,?)`
+    ).run("إدارة نُزه", adminEmail, "", hashPassword(adminPassword), generatedPassword ? 1 : 0, t, t);
+    console.log(`✅ تم إنشاء حساب الأدمن: ${adminEmail}`);
+    if (generatedPassword) {
+      console.log(`🔑 كلمة مرور مؤقتة (لن تُطبع مرة أخرى): ${adminPassword}`);
+      console.log("   سيُطلب تغييرها إلزامياً فور أول تسجيل دخول.");
+    }
+  } else {
+    console.warn(
+      "⚠️  لم يُنشأ أي حساب أدمن — عرّف ADMIN_EMAIL (و ADMIN_PASSWORD اختيارياً) في متغيرات البيئة ثم أعد التشغيل."
+    );
+  }
 
   // ---------- المحميات (بيانات مرجعية للخريطة — حدّثها من قاعدة البيانات عند توفر الإحداثيات الرسمية) ----------
   const insReserve = db.prepare(

@@ -26,6 +26,7 @@ export interface AuthedUser {
   avatar: string;
   city: string;
   gender: string;
+  must_change_password: number;
 }
 
 declare module "express-serve-static-core" {
@@ -44,7 +45,7 @@ export function attachUser(req: Request, _res: Response, next: NextFunction) {
     const token = decodeURIComponent(match.split("=")[1] || "");
     const row = db
       .prepare(
-        `SELECT u.id, u.name, u.email, u.phone, u.role, u.status, u.avatar, u.city, u.gender
+        `SELECT u.id, u.name, u.email, u.phone, u.role, u.status, u.avatar, u.city, u.gender, u.must_change_password
          FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?`
       )
       .get(token) as AuthedUser | undefined;
@@ -92,6 +93,7 @@ function publicUser(u: any) {
   return {
     id: u.id, name: u.name, email: u.email, phone: u.phone, role: u.role,
     avatar: u.avatar, city: u.city, gender: u.gender,
+    mustChangePassword: !!u.must_change_password,
   };
 }
 
@@ -180,7 +182,8 @@ export function authRouter(): Router {
     if (!verifyPassword(String(current || ""), u.password))
       return res.status(400).json({ error: "كلمة المرور الحالية غير صحيحة" });
     if (String(nextPass || "").length < 6) return res.status(400).json({ error: "كلمة المرور الجديدة 6 أحرف على الأقل" });
-    db.prepare("UPDATE users SET password=? WHERE id=?").run(hashPassword(nextPass), u.id);
+    db.prepare("UPDATE users SET password=?, must_change_password=0 WHERE id=?").run(hashPassword(nextPass), u.id);
+    logActivity(u.name, "تغيير كلمة المرور");
     res.json({ ok: true });
   });
 

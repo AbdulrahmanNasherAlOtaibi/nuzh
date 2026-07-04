@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
-import { get, post } from "../lib/api";
+import { get, post, put } from "../lib/api";
 import { useApp } from "../lib/store";
 import { Icon, Logo, Spinner, StatCard, LineChart, BarChart } from "../components/ui";
 import { CompaniesSection, UsersSection, BookingsSection } from "./ops";
@@ -147,6 +147,44 @@ function AdminLogin() {
   );
 }
 
+function ForceChangePassword() {
+  const { refresh, toast, logout } = useApp();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    if (next.length < 6) return toast("كلمة المرور 6 أحرف على الأقل", "err");
+    if (next !== confirm) return toast("كلمتا المرور غير متطابقتين", "err");
+    setBusy(true);
+    try {
+      await put("/auth/password", { current, next });
+      toast("تم تعيين كلمة المرور بنجاح");
+      await refresh();
+    } catch (e: any) { toast(e.message, "err"); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="min-h-dvh flex items-center justify-center px-4">
+      <div className="card p-6 w-full max-w-sm">
+        <div className="flex justify-center"><Logo size={64} /></div>
+        <h1 className="font-black text-lg mt-2 text-center">غيّر كلمة المرور المؤقتة</h1>
+        <p className="text-xs font-bold opacity-55 mb-5 text-center leading-5">
+          هذا أول دخول لحساب الأدمن — يجب تعيين كلمة مرور خاصة بك قبل المتابعة.
+          الكلمة المؤقتة مطبوعة في سجلات تشغيل الخادم (console) عند أول تشغيل.
+        </p>
+        <div className="space-y-3 text-start">
+          <div><span className="label">كلمة المرور المؤقتة</span><input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} className="input" dir="ltr" /></div>
+          <div><span className="label">كلمة المرور الجديدة</span><input type="password" value={next} onChange={(e) => setNext(e.target.value)} className="input" dir="ltr" /></div>
+          <div><span className="label">تأكيد كلمة المرور الجديدة</span><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="input" dir="ltr" onKeyDown={(e) => e.key === "Enter" && submit()} /></div>
+          <button onClick={submit} disabled={busy} className="btn-gold w-full py-3">{busy ? "لحظات…" : "تعيين كلمة المرور"}</button>
+          <button onClick={() => logout()} className="w-full text-center text-xs font-bold opacity-50 mt-1">تسجيل الخروج</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminApp() {
   const { user, loaded, logout } = useApp();
   const [loc, nav] = useLocation();
@@ -154,6 +192,7 @@ export default function AdminApp() {
 
   if (!loaded) return <Spinner />;
   if (!user || user.role !== "admin") return <AdminLogin />;
+  if (user.mustChangePassword) return <ForceChangePassword />;
 
   const Body = {
     dashboard: Dashboard,
