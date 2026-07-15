@@ -1,68 +1,28 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import { get, post, SAR, fmtDate, catLabel } from "../lib/api";
+import { get, SAR, fmtDate, catLabel } from "../lib/api";
 import { useApp } from "../lib/store";
-import { Icon, Stars, RatingBadge, Spinner, Badge, Modal } from "../components/ui";
+import { Icon, Stars, RatingBadge, Spinner, Badge } from "../components/ui";
 import type { Trip } from "../components/TripCard";
 
 interface Review { id: number; user_name: string; rating: number; text: string; reply: string; created_at: string }
 
+const WHATSAPP_NUMBER = "966557517267";
+
 export default function TripDetails() {
   const [, params] = useRoute("/trips/:id");
   const [, nav] = useLocation();
-  const { user, t, lang, toast } = useApp();
+  const { t, lang } = useApp();
   const [data, setData] = useState<{ trip: Trip & { child_price: number; capacity: number }; reviews: Review[]; reserve: any } | null>(null);
-  const [booking, setBooking] = useState(false);
-
-  // نموذج الحجز
-  const [date, setDate] = useState("");
-  const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(0);
-  const [notes, setNotes] = useState("");
-  const [method, setMethod] = useState("mada");
-  const [promo, setPromo] = useState("");
-  const [promoInfo, setPromoInfo] = useState<{ code: string; kind: string; value: number } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<number | null>(null);
 
   useEffect(() => {
-    get(`/trips/${params?.id}`).then((d) => { setData(d); setDate(d.trip.dates?.[0] || ""); }).catch(() => nav("/"));
+    get(`/trips/${params?.id}`).then(setData).catch(() => nav("/"));
   }, [params?.id]);
 
   if (!data) return <Spinner />;
   const { trip, reviews, reserve } = data;
   const childPrice = trip.child_price || Math.round(trip.price / 2);
-  let total = adults * trip.price + children * childPrice;
-  let discount = 0;
-  if (promoInfo) {
-    discount = promoInfo.kind === "percent" ? Math.round((total * promoInfo.value) / 100) : promoInfo.value;
-    total = Math.max(0, total - discount);
-  }
-
-  const applyPromo = async () => {
-    try {
-      const d = await post("/promo/validate", { code: promo });
-      setPromoInfo(d.promo);
-      toast("تم تطبيق الكود ✅");
-    } catch (e: any) {
-      setPromoInfo(null);
-      toast(e.message, "err");
-    }
-  };
-
-  const confirm = async () => {
-    if (!user) return nav(`/auth?next=/trips/${trip.id}`);
-    if (!date) return toast("اختر تاريخ الرحلة", "err");
-    setBusy(true);
-    try {
-      const d = await post("/bookings", { tripId: trip.id, date, adults, children, notes, paymentMethod: method, promoCode: promoInfo?.code || "" });
-      setDone(d.bookingId);
-    } catch (e: any) {
-      toast(e.message, "err");
-    } finally {
-      setBusy(false);
-    }
-  };
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`مرحباً، أبي أحجز رحلة: ${trip.title}`)}`;
 
   return (
     <div className="max-w-3xl mx-auto pb-6">
@@ -110,7 +70,7 @@ export default function TripDetails() {
             <div className="text-2xl font-black text-gold-600 dark:text-gold-400">{SAR(trip.price)}</div>
             <div className="text-[10px] opacity-45 font-bold">الأطفال: {SAR(childPrice)}</div>
           </div>
-          <button onClick={() => setBooking(true)} className="btn-gold px-8">{t("bookNow")}</button>
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-gold px-8">{t("bookNow")}</a>
         </div>
 
         {/* التقييمات */}
@@ -135,78 +95,6 @@ export default function TripDetails() {
           ))}
         </div>
       </div>
-
-      {/* نافذة الحجز */}
-      <Modal open={booking} onClose={() => { setBooking(false); setDone(null); }} title={done ? "" : `حجز: ${trip.title}`}>
-        {done ? (
-          <div className="text-center py-6">
-            <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center mb-3"><Icon name="check" size={34} /></div>
-            <h3 className="font-black text-lg">تم تأكيد حجزك 🎉</h3>
-            <p className="text-sm opacity-60 font-bold mt-1">رقم الحجز #{done} — تجده في «رحلاتي»</p>
-            <button onClick={() => nav("/my-trips")} className="btn-gold w-full mt-5">الذهاب إلى رحلاتي</button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* التاريخ */}
-            <div>
-              <span className="label">اختر التاريخ</span>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                {trip.dates.map((d) => (
-                  <button key={d} onClick={() => setDate(d)}
-                    className={`chip !px-3 text-xs ${date === d ? "chip-active" : ""}`}>
-                    {fmtDate(d, lang)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* الأشخاص */}
-            <div className="grid grid-cols-2 gap-3">
-              {[{ label: "بالغين", value: adults, set: setAdults, min: 1 }, { label: "أطفال (أقل من 12)", value: children, set: setChildren, min: 0 }].map((row) => (
-                <div key={row.label} className="card !rounded-xl p-3 flex items-center justify-between">
-                  <span className="text-xs font-extrabold opacity-70">{row.label}</span>
-                  <div className="flex items-center gap-2.5">
-                    <button onClick={() => row.set(Math.max(row.min, row.value - 1))} className="w-7 h-7 rounded-lg border border-gold-500/50 text-gold-500 flex items-center justify-center"><Icon name="minus" size={14} /></button>
-                    <span className="font-black w-5 text-center">{row.value}</span>
-                    <button onClick={() => row.set(row.value + 1)} className="w-7 h-7 rounded-lg border border-gold-500/50 text-gold-500 flex items-center justify-center"><Icon name="plus" size={14} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* ملاحظات */}
-            <div>
-              <span className="label">ملاحظات خاصة</span>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="هل لديك أي متطلبات إضافية أو صحية؟" className="input resize-none" />
-            </div>
-            {/* كود الخصم */}
-            <div className="flex gap-2">
-              <input value={promo} onChange={(e) => setPromo(e.target.value)} placeholder="كود الخصم (اختياري)" className="input flex-1" />
-              <button onClick={applyPromo} className="btn-outline text-xs whitespace-nowrap">تطبيق</button>
-            </div>
-            {/* ملخص الدفع */}
-            <div className="card !rounded-xl p-3.5 text-sm space-y-1.5">
-              <div className="flex justify-between"><span className="opacity-60 font-bold">بالغين × {adults}</span><span className="font-black">{SAR(adults * trip.price)}</span></div>
-              {children > 0 && <div className="flex justify-between"><span className="opacity-60 font-bold">أطفال × {children}</span><span className="font-black">{SAR(children * childPrice)}</span></div>}
-              {discount > 0 && <div className="flex justify-between text-emerald-600 dark:text-emerald-400"><span className="font-bold">خصم ({promoInfo!.code})</span><span className="font-black">-{SAR(discount)}</span></div>}
-              <div className="border-t border-gold-500/30 pt-1.5 flex justify-between text-gold-600 dark:text-gold-400"><span className="font-black">المجموع</span><span className="font-black text-lg">{SAR(total)}</span></div>
-            </div>
-            {/* طريقة الدفع */}
-            <div>
-              <span className="label">طريقة الدفع</span>
-              <div className="grid grid-cols-3 gap-2">
-                {[{ k: "mada", l: "مدى", i: "💳" }, { k: "visa", l: "Visa", i: "💳" }, { k: "applepay", l: "Apple Pay", i: "" }].map((m) => (
-                  <button key={m.k} onClick={() => setMethod(m.k)}
-                    className={`chip justify-center text-xs w-full ${method === m.k ? "chip-active" : ""}`}>
-                    {m.i} {m.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button onClick={confirm} disabled={busy} className="btn-gold w-full py-3">
-              {busy ? "جارٍ التأكيد…" : user ? `تأكيد الحجز — ${SAR(total)}` : "سجل الدخول لإتمام الحجز"}
-            </button>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

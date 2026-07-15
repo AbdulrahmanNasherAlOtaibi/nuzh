@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { db, now, setSetting } from "./db.ts";
+import { db, now, getSetting, setSetting } from "./db.ts";
 import { hashPassword } from "./auth.ts";
 
 function polygon(points: [number, number][]): number[][] {
@@ -12,31 +12,12 @@ function polygon(points: [number, number][]): number[][] {
  * الشركاء، محتوى السلوك البيئي، وإعدادات المنصة.
  */
 export function seedIfEmpty() {
-  const count = (db.prepare("SELECT COUNT(*) c FROM users").get() as { c: number }).c;
-  if (count > 0) return;
+  ensureAdmin();
+
+  // علامة زرع مستقلة عن جدول المستخدمين — تمنع إعادة الزرع المزدوج عند كل تشغيل
+  if (getSetting("seededAt", "")) return;
 
   const t = now();
-
-  // ---------- حساب الأدمن ----------
-  // لا بيانات دخول ثابتة بالكود — تُعرَّف عبر متغيرات البيئة وقت التشغيل فقط.
-  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  if (adminEmail) {
-    const generatedPassword = !process.env.ADMIN_PASSWORD;
-    const adminPassword = process.env.ADMIN_PASSWORD || crypto.randomBytes(9).toString("base64url");
-    db.prepare(
-      `INSERT INTO users (name,email,phone,password,role,city,status,email_verified,must_change_password,created_at,last_active)
-       VALUES (?,?,?,?, 'admin','', 'active',1,?,?,?)`
-    ).run("إدارة نُزه", adminEmail, "", hashPassword(adminPassword), generatedPassword ? 1 : 0, t, t);
-    console.log(`✅ تم إنشاء حساب الأدمن: ${adminEmail}`);
-    if (generatedPassword) {
-      console.log(`🔑 كلمة مرور مؤقتة (لن تُطبع مرة أخرى): ${adminPassword}`);
-      console.log("   سيُطلب تغييرها إلزامياً فور أول تسجيل دخول.");
-    }
-  } else {
-    console.warn(
-      "⚠️  لم يُنشأ أي حساب أدمن — عرّف ADMIN_EMAIL (و ADMIN_PASSWORD اختيارياً) في متغيرات البيئة ثم أعد التشغيل."
-    );
-  }
 
   // ---------- المحميات (بيانات مرجعية للخريطة — حدّثها من قاعدة البيانات عند توفر الإحداثيات الرسمية) ----------
   const insReserve = db.prepare(
@@ -132,19 +113,54 @@ export function seedIfEmpty() {
   ]);
   setSetting("about", "نُزه منصة سعودية تربط عشاق الطبيعة بالمحميات الملكية عبر رحلات بيئية منظمة ومرخصة، بالشراكة مع شركات سياحية ومرشدين معتمدين. رسالتنا: سياحة بيئية مستدامة تحفظ للبراري جمالها وللأجيال حقها.");
   setSetting("faq", [
-    { q: "كيف أحجز رحلة؟", a: "اختر الرحلة المناسبة من الصفحة الرئيسية أو صفحة استكشف، حدد التاريخ وعدد الأشخاص، ثم أكمل الدفع الإلكتروني بأمان." },
+    { q: "كيف أحجز رحلة؟", a: "اختر الرحلة المناسبة من الصفحة الرئيسية أو صفحة استكشف، ثم اضغط «احجز الآن» — يفتح لك واتساب مباشرة لإتمام الحجز مع فريق نُزه." },
     { q: "هل أحتاج تصريحاً لدخول المحمية؟", a: "بعض مناطق المحميات تتطلب تصريحاً مسبقاً — تظهر لك المناطق على الخريطة ملونة حسب التصنيف، ويمكنك طلب التصريح من قسم رحلاتي > التصاريح." },
-    { q: "هل يمكنني إلغاء حجزي؟", a: "نعم، يمكنك الإلغاء قبل 48 ساعة من موعد الرحلة واسترداد كامل المبلغ." },
+    { q: "هل يمكنني إلغاء حجزي؟", a: "نعم، تواصل معنا عبر واتساب قبل 48 ساعة من موعد الرحلة لإلغاء الحجز واسترداد كامل المبلغ." },
     { q: "كيف أقيّم رحلة؟", a: "التقييم متاح فقط للرحلات التي حجزتها وأكملتها فعلياً — من رحلاتي > السابقة، وهذا يضمن مصداقية التقييمات." },
     { q: "كيف أنضم كمزود خدمة؟", a: "من بوابة مزودي الخدمة سجل كشركة سياحية أو مرشد سياحي، وبعد مراجعة الطلب تستطيع نشر رحلاتك واستقبال الحجوزات." },
   ]);
   setSetting("userGuide", [
     { icon: "🧭", title: "استكشف", body: "تصفح الرحلات حسب التصنيف: بيئية، ثقافية، ترفيهية، مغامرات، أو مع مرشد سياحي." },
     { icon: "🗺️", title: "الخريطة", body: "تعرف على مناطق التنزه: الأخضر مسموح، الأصفر يتطلب تصريحاً، الأحمر ممنوع." },
-    { icon: "🎫", title: "احجز", body: "حدد التاريخ والأشخاص وادفع إلكترونياً — تصلك التفاصيل فوراً." },
+    { icon: "🎫", title: "احجز", body: "اضغط «احجز الآن» — يفتح لك واتساب مباشرة لتأكيد التاريخ والتفاصيل مع فريقنا." },
     { icon: "⭐", title: "قيّم", body: "بعد اكتمال رحلتك شارك تجربتك وصورك وحصّل الإنجازات." },
   ]);
 
   db.prepare("INSERT INTO activity_log (actor, action, created_at) VALUES (?,?,?)").run("النظام", "تم تجهيز المنصة للإطلاق", t);
+  setSetting("seededAt", t);
   console.log("✅ تم تجهيز قاعدة البيانات (بدون بيانات تجريبية)");
+}
+
+/**
+ * إنشاء حساب الأدمن — يعمل عند كل تشغيل (وليس مرة واحدة فقط):
+ * إن وُجد ADMIN_EMAIL ولا يوجد أي أدمن بالنظام، يُنشأ الحساب.
+ * لا بيانات دخول ثابتة بالكود إطلاقاً.
+ */
+function ensureAdmin() {
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const admins = (db.prepare("SELECT COUNT(*) c FROM users WHERE role='admin'").get() as { c: number }).c;
+  if (admins > 0) return;
+  if (!adminEmail) {
+    console.warn(
+      "⚠️  لم يُنشأ أي حساب أدمن — عرّف ADMIN_EMAIL (و ADMIN_PASSWORD اختيارياً) في متغيرات البيئة ثم أعد التشغيل."
+    );
+    return;
+  }
+  const exists = db.prepare("SELECT id FROM users WHERE email=?").get(adminEmail);
+  if (exists) {
+    console.warn(`⚠️  البريد ${adminEmail} مسجّل لحساب غير إداري — استخدم بريداً آخر للأدمن.`);
+    return;
+  }
+  const t = now();
+  const generatedPassword = !process.env.ADMIN_PASSWORD;
+  const adminPassword = process.env.ADMIN_PASSWORD || crypto.randomBytes(9).toString("base64url");
+  db.prepare(
+    `INSERT INTO users (name,email,phone,password,role,city,status,email_verified,must_change_password,created_at,last_active)
+     VALUES (?,?,?,?, 'admin','', 'active',1,?,?,?)`
+  ).run("إدارة نُزه", adminEmail, "", hashPassword(adminPassword), generatedPassword ? 1 : 0, t, t);
+  console.log(`✅ تم إنشاء حساب الأدمن: ${adminEmail}`);
+  if (generatedPassword) {
+    console.log(`🔑 كلمة مرور مؤقتة (لن تُطبع مرة أخرى): ${adminPassword}`);
+    console.log("   سيُطلب تغييرها إلزامياً فور أول تسجيل دخول.");
+  }
 }

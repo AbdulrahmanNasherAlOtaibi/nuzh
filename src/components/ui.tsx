@@ -57,7 +57,7 @@ export function Icon({ name, size = 22, className = "", filled = false }: { name
 }
 
 export function Logo({ size = 52 }: { size?: number }) {
-  return <img src="/logo.svg" width={size} height={size} alt="نُزه" className="drop-shadow" />;
+  return <img src="/logo.png" width={size} height={size} alt="نُزه" className="drop-shadow" />;
 }
 
 export function Stars({ value, size = 14 }: { value: number; size?: number }) {
