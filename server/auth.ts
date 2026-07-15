@@ -1,8 +1,58 @@
 import crypto from "node:crypto";
 import type { Request, Response, NextFunction, Router } from "express";
 import express from "express";
+import { z } from "zod";
 import { db, now, logActivity } from "./db.ts";
 import { generateTotpSecret, verifyTotp, otpauthUrl } from "./totp.ts";
+import { appendCookie, validate } from "./security.ts";
+
+const emailSchema = z.string().trim().toLowerCase().email("إيميل غير صحيح").max(180);
+const passwordSchema = z.string().min(6, "كلمة المرور 6 أحرف على الأقل").max(200);
+const nameSchema = z.string().trim().min(2, "الاسم قصير جداً").max(100);
+const phoneSchema = z.string().trim().max(20).optional().default("");
+
+const registerSchema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+  password: passwordSchema,
+  phone: phoneSchema,
+  gender: z.string().max(20).optional().default(""),
+  city: z.string().max(80).optional().default(""),
+});
+
+const providerRegisterSchema = z.object({
+  type: z.enum(["company", "guide"], { message: "حدد نوع الحساب: شركة أو مرشد سياحي" }),
+  name: nameSchema,
+  email: emailSchema,
+  password: passwordSchema,
+  phone: phoneSchema,
+});
+
+const loginSchema = z.object({
+  email: z.string().trim().max(180),
+  password: z.string().max(200),
+});
+
+const loginOtpSchema = z.object({
+  pendingToken: z.string().min(1).max(200),
+  code: z.string().trim().max(10),
+});
+
+const profileSchema = z.object({
+  name: nameSchema.optional(),
+  phone: z.string().max(20).optional(),
+  city: z.string().max(80).optional(),
+  gender: z.string().max(20).optional(),
+  avatar: z.string().max(2_000_000).optional(),
+});
+
+const passwordChangeSchema = z.object({
+  current: z.string().max(200),
+  next: passwordSchema,
+});
+
+const totpCodeSchema = z.object({ code: z.string().trim().max(10) });
+const totpDisableSchema = z.object({ password: z.string().max(200), code: z.string().trim().max(10) });
 
 // ---------- حد محاولات الدخول (حماية من التخمين) ----------
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -108,10 +158,8 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 function createSession(res: Response, userId: number) {
   const token = crypto.randomBytes(32).toString("hex");
   db.prepare("INSERT INTO sessions (token, user_id, created_at) VALUES (?,?,?)").run(token, userId, now());
-  res.setHeader(
-    "Set-Cookie",
-    `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`
-  );
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  appendCookie(res, `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}${secure}`);
 }
 
 function publicUser(u: any) {
@@ -126,7 +174,7 @@ function publicUser(u: any) {
 export function authRouter(): Router {
   const r = express.Router();
 
-  r.post("/register", (req, res) => {
+  r.post("/register", validate(registerSchema), (req, res) => {
     const { name, email, password, phone = "", gender = "", city = "" } = req.body || {};
     if (!name || !email || !password) return res.status(400).json({ error: "أكمل الاسم والإيميل وكلمة المرور" });
     if (String(password).length < 6) return res.status(400).json({ error: "كلمة المرور 6 أحرف على الأقل" });
@@ -144,7 +192,7 @@ export function authRouter(): Router {
     res.json({ user: publicUser(u) });
   });
 
-  r.post("/provider-register", (req, res) => {
+  r.post("/provider-register", validate(providerRegisterSchema), (req, res) => {
     const { type, name, email, password, phone = "" } = req.body || {};
     if (!["company", "guide"].includes(type)) return res.status(400).json({ error: "حدد نوع الحساب: شركة أو مرشد سياحي" });
     if (!name || !email || !password) return res.status(400).json({ error: "أكمل جميع الحقول" });
@@ -166,7 +214,7 @@ export function authRouter(): Router {
     res.json({ user: publicUser(u), providerStatus: "pending" });
   });
 
-  r.post("/login", (req, res) => {
+  r.post("/login", validate(loginSchema), (req, res) => {
     const { email, password } = req.body || {};
     const normEmail = String(email || "").toLowerCase();
     const rateKey = `${req.ip || "?"}:${normEmail}`;
@@ -193,7 +241,7 @@ export function authRouter(): Router {
   });
 
   // الخطوة الثانية من الدخول: رمز تطبيق المصادقة
-  r.post("/login/otp", (req, res) => {
+  r.post("/login/otp", validate(loginOtpSchema), (req, res) => {
     const { pendingToken, code } = req.body || {};
     prunePendingOtp();
     const pending = pendingOtp.get(String(pendingToken || ""));
@@ -221,7 +269,7 @@ export function authRouter(): Router {
     res.json({ secret, otpauth: otpauthUrl(u.email, secret) });
   });
 
-  r.post("/2fa/enable", requireUser, (req, res) => {
+  r.post("/2fa/enable", requireUser, validate(totpCodeSchema), (req, res) => {
     const u = db.prepare("SELECT * FROM users WHERE id=?").get(req.user!.id) as any;
     if (u.totp_enabled) return res.status(400).json({ error: "التحقق الثنائي مفعل مسبقاً" });
     if (!u.totp_secret) return res.status(400).json({ error: "ابدأ بخطوة الإعداد أولاً" });
@@ -232,7 +280,7 @@ export function authRouter(): Router {
     res.json({ ok: true });
   });
 
-  r.post("/2fa/disable", requireUser, (req, res) => {
+  r.post("/2fa/disable", requireUser, validate(totpDisableSchema), (req, res) => {
     const u = db.prepare("SELECT * FROM users WHERE id=?").get(req.user!.id) as any;
     if (!u.totp_enabled) return res.status(400).json({ error: "التحقق الثنائي غير مفعل" });
     if (!verifyPassword(String(req.body?.password || ""), u.password))
@@ -248,7 +296,7 @@ export function authRouter(): Router {
     const cookie = req.headers.cookie || "";
     const match = cookie.split(/;\s*/).find((c) => c.startsWith(COOKIE + "="));
     if (match) db.prepare("DELETE FROM sessions WHERE token=?").run(decodeURIComponent(match.split("=")[1] || ""));
-    res.setHeader("Set-Cookie", `${COOKIE}=; Path=/; HttpOnly; Max-Age=0`);
+    appendCookie(res, `${COOKIE}=; Path=/; HttpOnly; Max-Age=0`);
     res.json({ ok: true });
   });
 
@@ -257,7 +305,7 @@ export function authRouter(): Router {
     res.json({ user: publicUser(req.user), provider: req.provider || null });
   });
 
-  r.put("/profile", requireUser, (req, res) => {
+  r.put("/profile", requireUser, validate(profileSchema), (req, res) => {
     const { name, phone, city, gender, avatar } = req.body || {};
     const u = req.user!;
     db.prepare("UPDATE users SET name=?, phone=?, city=?, gender=?, avatar=? WHERE id=?").run(
@@ -266,7 +314,7 @@ export function authRouter(): Router {
     res.json({ ok: true });
   });
 
-  r.put("/password", requireUser, (req, res) => {
+  r.put("/password", requireUser, validate(passwordChangeSchema), (req, res) => {
     const { current, next: nextPass } = req.body || {};
     const u = db.prepare("SELECT * FROM users WHERE id=?").get(req.user!.id) as any;
     if (!verifyPassword(String(current || ""), u.password))

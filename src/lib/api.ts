@@ -1,6 +1,11 @@
+function csrfToken(): string {
+  const match = document.cookie.split(/;\s*/).find((c) => c.startsWith("nuzh_csrf="));
+  return match ? decodeURIComponent(match.split("=")[1] || "") : "";
+}
+
 export async function api<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`/api${path}`, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken(), ...(options.headers || {}) },
     credentials: "same-origin",
     ...options,
   });
