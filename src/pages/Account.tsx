@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { get, put } from "../lib/api";
 import { useApp } from "../lib/store";
 import { Icon, Modal, Badge } from "../components/ui";
+import { TwoFactorCard } from "../components/twofactor";
 
 export default function Account() {
   const { user, provider, t, lang, setLang, theme, setTheme, logout, refresh, toast } = useApp();
@@ -59,6 +60,8 @@ export default function Account() {
           <Row icon="shield" label="تغيير كلمة المرور" onClick={() => setModal("password")} />
         </div>
       )}
+
+      {user && <div className="mt-3"><TwoFactorCard /></div>}
 
       {/* الإعدادات */}
       <h2 className="font-extrabold text-gold-600 dark:text-gold-400 text-sm mt-5 mb-2">{t("settings")}</h2>

@@ -95,10 +95,12 @@ export function seedIfEmpty() {
     name: "نُزه",
     nameEn: "Nuzh",
     tagline: "السياحة البيئية في المحميات",
-    email: "support@nuzh.sa",
-    phone: "920012345",
+    email: "contact@nuzh.site",
+    phone: "0557517267",
+    whatsapp: "966557517267",
     address: "الرياض، المملكة العربية السعودية",
   });
+  setSetting("map", { style: "satellite" });
   setSetting("payment", {
     feePercent: 10,
     methods: { mada: true, visa: true, applepay: true },

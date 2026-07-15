@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { get, put, post, del } from "../lib/api";
 import { useApp } from "../lib/store";
 import { Spinner, StatCard, Badge, Modal } from "../components/ui";
+import { TwoFactorCard } from "../components/twofactor";
 import { Table, SectionHead } from "./AdminApp";
 
 /* 9️⃣ التقارير والتحليلات */
@@ -106,6 +107,7 @@ export function SettingsSection() {
             <div><span className="label">الاسم بالإنجليزية</span><input value={general.nameEn || ""} onChange={(e) => setGeneral({ ...general, nameEn: e.target.value })} className="input" dir="ltr" /></div>
             <div><span className="label">البريد الإلكتروني</span><input value={general.email || ""} onChange={(e) => setGeneral({ ...general, email: e.target.value })} className="input" dir="ltr" /></div>
             <div><span className="label">الهاتف</span><input value={general.phone || ""} onChange={(e) => setGeneral({ ...general, phone: e.target.value })} className="input" dir="ltr" /></div>
+            <div className="col-span-2"><span className="label">واتساب الحجوزات (بالصيغة الدولية: 9665xxxxxxxx)</span><input value={general.whatsapp || ""} onChange={(e) => setGeneral({ ...general, whatsapp: e.target.value.replace(/\D/g, "") })} className="input" dir="ltr" placeholder="9665xxxxxxxx" /></div>
           </div>
           <div><span className="label">الشعار التعريفي</span><input value={general.tagline || ""} onChange={(e) => setGeneral({ ...general, tagline: e.target.value })} className="input" /></div>
           <div><span className="label">العنوان</span><input value={general.address || ""} onChange={(e) => setGeneral({ ...general, address: e.target.value })} className="input" /></div>
@@ -155,14 +157,7 @@ export function SettingsSection() {
             <button onClick={changePass} className="btn-gold">تغيير</button>
           </div>
 
-          <div className="card p-5">
-            <label className="flex items-center gap-2 text-sm font-extrabold">
-              <input type="checkbox" checked={!!security.twoFactor}
-                onChange={(e) => { const s = { ...security, twoFactor: e.target.checked }; setSecurity(s); save("security", s, "حُفظت إعدادات الأمان"); }}
-                className="accent-[#c9a95c] w-4 h-4" />
-              تفعيل المصادقة الثنائية (2FA) لحسابات المشرفين
-            </label>
-          </div>
+          <TwoFactorCard />
 
           <div>
             <h3 className="font-extrabold text-sm mb-2">⚠️ الأنشطة المريبة (محاولات دخول فاشلة متكررة)</h3>

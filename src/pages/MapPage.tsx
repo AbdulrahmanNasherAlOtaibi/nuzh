@@ -18,25 +18,67 @@ const ZONE_STYLE: Record<string, { color: string; fill: string; label: string }>
   forbidden: { color: "#c62828", fill: "#F44336", label: "ممنوع الدخول" },
 };
 
+// أنماط الخرائط — بلاطات خفيفة مجانية بدون مفاتيح API
+export const MAP_STYLES: Record<string, { label: string; url: string; options?: L.TileLayerOptions }> = {
+  satellite: {
+    label: "🛰️ قمر صناعي",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    options: { maxZoom: 18 },
+  },
+  light: {
+    label: "☀️ فاتح",
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    options: { maxZoom: 19 },
+  },
+  dark: {
+    label: "🌙 داكن",
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    options: { maxZoom: 19 },
+  },
+};
+
 export default function MapPage() {
   const mapRef = useRef<L.Map | null>(null);
+  const tileRef = useRef<L.TileLayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { t } = useApp();
   const [reserves, setReserves] = useState<Reserve[]>([]);
   const [selected, setSelected] = useState<{ zone: Zone; reserve: Reserve } | null>(null);
   const [legendOpen, setLegendOpen] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>("");
+  const [style, setStyle] = useState<string>(() => localStorage.getItem("nuzh_map_style") || "");
 
   useEffect(() => { get("/reserves").then((d) => setReserves(d.reserves)).catch(() => {}); }, []);
+
+  // النمط الافتراضي من إعدادات المنصة (يتحكم فيه الأدمن) — إلا إذا اختار المستخدم نمطاً بنفسه
+  useEffect(() => {
+    if (style) return;
+    get("/public-settings")
+      .then((d) => setStyle(MAP_STYLES[d?.map?.style] ? d.map.style : "satellite"))
+      .catch(() => setStyle("satellite"));
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, { zoomControl: false, attributionControl: false }).setView([24.9, 46.6], 7);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", { maxZoom: 18 }).addTo(map);
     L.control.zoom({ position: "bottomleft" }).addTo(map);
     mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+    return () => { map.remove(); mapRef.current = null; tileRef.current = null; };
   }, []);
+
+  // تبديل طبقة البلاطات حسب النمط المختار
+  useEffect(() => {
+    const map = mapRef.current;
+    const s = MAP_STYLES[style];
+    if (!map || !s) return;
+    if (tileRef.current) map.removeLayer(tileRef.current);
+    tileRef.current = L.tileLayer(s.url, s.options).addTo(map);
+  }, [style]);
+
+  const pickStyle = (k: string) => {
+    setStyle(k);
+    localStorage.setItem("nuzh_map_style", k);
+  };
 
   // رسم المناطق
   useEffect(() => {
@@ -83,18 +125,28 @@ export default function MapPage() {
         <div className="bg-white/95 dark:bg-night-800/95 backdrop-blur rounded-2xl shadow-lg p-3.5 text-night-900 dark:text-sand-50">
           <h1 className="text-center font-black text-base">{t("mapTitle")}</h1>
           {legendOpen && (
-            <div className="flex items-center justify-center gap-3 mt-2.5 text-[11px] font-extrabold flex-wrap">
-              <button onClick={() => setActiveFilter("")} className={`flex items-center gap-1.5 ${!activeFilter ? "" : "opacity-50"}`}>
-                <span className="w-3 h-3 rounded-full bg-[#2196F3]" /> {t("myLocation")}
-              </button>
-              {(["allowed", "permit", "forbidden"] as const).map((k) => (
-                <button key={k} onClick={() => setActiveFilter(activeFilter === k ? "" : k)}
-                  className={`flex items-center gap-1.5 ${!activeFilter || activeFilter === k ? "" : "opacity-40"}`}>
-                  <span className="w-3 h-3 rounded-full" style={{ background: ZONE_STYLE[k].fill }} />
-                  {k === "allowed" ? t("allowed") : k === "permit" ? t("permitNeeded") : t("forbidden")}
+            <>
+              <div className="flex items-center justify-center gap-3 mt-2.5 text-[11px] font-extrabold flex-wrap">
+                <button onClick={() => setActiveFilter("")} className={`flex items-center gap-1.5 ${!activeFilter ? "" : "opacity-50"}`}>
+                  <span className="w-3 h-3 rounded-full bg-[#2196F3]" /> {t("myLocation")}
                 </button>
-              ))}
-            </div>
+                {(["allowed", "permit", "forbidden"] as const).map((k) => (
+                  <button key={k} onClick={() => setActiveFilter(activeFilter === k ? "" : k)}
+                    className={`flex items-center gap-1.5 ${!activeFilter || activeFilter === k ? "" : "opacity-40"}`}>
+                    <span className="w-3 h-3 rounded-full" style={{ background: ZONE_STYLE[k].fill }} />
+                    {k === "allowed" ? t("allowed") : k === "permit" ? t("permitNeeded") : t("forbidden")}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center justify-center gap-1.5 mt-2">
+                {Object.entries(MAP_STYLES).map(([k, s]) => (
+                  <button key={k} onClick={() => pickStyle(k)}
+                    className={`text-[10px] font-black rounded-full px-2.5 py-1 border transition ${style === k ? "bg-gold-500/20 border-gold-500 text-gold-700 dark:text-gold-300" : "border-sand-300 dark:border-night-600 opacity-60"}`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
           <button onClick={() => setLegendOpen(!legendOpen)} className="mx-auto block mt-1 opacity-50">
             <Icon name="back" size={15} className={legendOpen ? "rotate-90" : "-rotate-90"} />

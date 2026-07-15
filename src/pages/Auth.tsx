@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { post } from "../lib/api";
 import { useApp } from "../lib/store";
-import { Logo } from "../components/ui";
 
 export default function Auth() {
   const [, nav] = useLocation();
@@ -12,12 +11,16 @@ export default function Auth() {
   const [tab, setTab] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({ name: "", email: "", phone: "", password: "" });
+  const [otpToken, setOtpToken] = useState("");
+  const [otpCode, setOtpCode] = useState("");
 
   const submit = async () => {
     setBusy(true);
     try {
-      if (tab === "login") await post("/auth/login", { email: f.email, password: f.password });
-      else await post("/auth/register", f);
+      if (tab === "login") {
+        const d = await post("/auth/login", { email: f.email, password: f.password });
+        if (d.otpRequired) { setOtpToken(d.pendingToken); return; }
+      } else await post("/auth/register", f);
       await refresh();
       toast(tab === "login" ? "أهلاً بعودتك 🌿" : "أهلاً بك في نُزه 🌿");
       nav(next);
@@ -28,11 +31,49 @@ export default function Auth() {
     }
   };
 
+  const submitOtp = async () => {
+    setBusy(true);
+    try {
+      await post("/auth/login/otp", { pendingToken: otpToken, code: otpCode });
+      await refresh();
+      toast("أهلاً بعودتك 🌿");
+      nav(next);
+    } catch (e: any) {
+      toast(e.message, "err");
+      if (String(e.message).includes("سجّل الدخول")) { setOtpToken(""); setOtpCode(""); }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (otpToken) {
+    return (
+      <div className="px-4 max-w-md mx-auto pt-8 pb-6">
+        <div className="text-center mb-6">
+          <h1 className="font-black text-2xl text-gold-600 dark:text-gold-400">التحقق الثنائي 🔐</h1>
+          <p className="text-xs font-bold opacity-55 mt-1">أدخل الرمز من تطبيق المصادقة في جوالك</p>
+        </div>
+        <div className="card p-5 space-y-4">
+          <input
+            value={otpCode}
+            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            className="input text-center !text-2xl tracking-[0.5em] font-black"
+            dir="ltr" inputMode="numeric" placeholder="000000" autoFocus
+            onKeyDown={(e) => e.key === "Enter" && otpCode.length === 6 && submitOtp()}
+          />
+          <button onClick={submitOtp} disabled={busy || otpCode.length !== 6} className="btn-gold w-full py-3">
+            {busy ? "جارٍ التحقق…" : "تأكيد الدخول"}
+          </button>
+          <button onClick={() => { setOtpToken(""); setOtpCode(""); }} className="w-full text-center text-xs font-bold opacity-60">→ رجوع لتسجيل الدخول</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 max-w-md mx-auto pt-8 pb-6">
       <div className="text-center mb-6">
-        <div className="flex justify-center"><Logo size={84} /></div>
-        <h1 className="font-black text-2xl mt-2 text-gold-600 dark:text-gold-400">نُزه</h1>
+        <h1 className="font-black text-2xl text-gold-600 dark:text-gold-400">نُزه</h1>
         <p className="text-xs font-bold opacity-55">السياحة البيئية في المحميات — Wildlife Tourism</p>
       </div>
 

@@ -6,6 +6,7 @@ import { Icon, Logo, Spinner, StatCard, LineChart, BarChart } from "../component
 import { CompaniesSection, UsersSection, BookingsSection } from "./ops";
 import { FinanceSection, QualitySection, ContentSection, PromotionsSection } from "./biz";
 import { ReportsSection, SettingsSection } from "./meta";
+import { PlatformSection } from "./platform";
 
 export const SECTIONS = [
   { key: "dashboard", label: "لوحة المعلومات", icon: "chart" },
@@ -15,6 +16,7 @@ export const SECTIONS = [
   { key: "finance", label: "الإيرادات والمالية", icon: "wallet" },
   { key: "quality", label: "التقييمات والشكاوى", icon: "star" },
   { key: "content", label: "المحتوى والرحلات", icon: "map" },
+  { key: "platform", label: "الخريطة والمحميات", icon: "pin" },
   { key: "promotions", label: "الترويجات والعروض", icon: "gift" },
   { key: "reports", label: "التقارير والتحليلات", icon: "doc" },
   { key: "settings", label: "الإعدادات والأمان", icon: "cog" },
@@ -123,25 +125,48 @@ function AdminLogin() {
   const { refresh, toast } = useApp();
   const [f, setF] = useState({ email: "", password: "" });
   const [busy, setBusy] = useState(false);
+  const [otpToken, setOtpToken] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const submit = async () => {
     setBusy(true);
     try {
-      await post("/auth/login", f);
+      const d = await post("/auth/login", f);
+      if (d.otpRequired) { setOtpToken(d.pendingToken); return; }
       await refresh();
     } catch (e: any) { toast(e.message, "err"); }
     finally { setBusy(false); }
+  };
+  const submitOtp = async () => {
+    setBusy(true);
+    try {
+      await post("/auth/login/otp", { pendingToken: otpToken, code: otpCode });
+      await refresh();
+    } catch (e: any) {
+      toast(e.message, "err");
+      if (String(e.message).includes("سجّل الدخول")) { setOtpToken(""); setOtpCode(""); }
+    } finally { setBusy(false); }
   };
   return (
     <div className="min-h-dvh flex items-center justify-center px-4">
       <div className="card p-6 w-full max-w-sm text-center">
         <div className="flex justify-center"><Logo size={70} /></div>
         <h1 className="font-black text-lg mt-2">لوحة تحكم نُزه</h1>
-        <p className="text-xs font-bold opacity-50 mb-5">الدخول للمشرفين فقط</p>
-        <div className="space-y-3 text-start">
-          <div><span className="label">الإيميل</span><input value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} className="input" dir="ltr" /></div>
-          <div><span className="label">كلمة المرور</span><input type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} className="input" dir="ltr" onKeyDown={(e) => e.key === "Enter" && submit()} /></div>
-          <button onClick={submit} disabled={busy} className="btn-gold w-full py-3">{busy ? "لحظات…" : "دخول"}</button>
-        </div>
+        <p className="text-xs font-bold opacity-50 mb-5">{otpToken ? "أدخل رمز التحقق من تطبيق المصادقة" : "الدخول للمشرفين فقط"}</p>
+        {otpToken ? (
+          <div className="space-y-3 text-start">
+            <input value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="input text-center !text-2xl tracking-[0.5em] font-black" dir="ltr" inputMode="numeric" placeholder="000000" autoFocus
+              onKeyDown={(e) => e.key === "Enter" && otpCode.length === 6 && submitOtp()} />
+            <button onClick={submitOtp} disabled={busy || otpCode.length !== 6} className="btn-gold w-full py-3">{busy ? "جارٍ التحقق…" : "تأكيد الدخول"}</button>
+            <button onClick={() => { setOtpToken(""); setOtpCode(""); }} className="w-full text-center text-xs font-bold opacity-60">→ رجوع</button>
+          </div>
+        ) : (
+          <div className="space-y-3 text-start">
+            <div><span className="label">الإيميل</span><input value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} className="input" dir="ltr" /></div>
+            <div><span className="label">كلمة المرور</span><input type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} className="input" dir="ltr" onKeyDown={(e) => e.key === "Enter" && submit()} /></div>
+            <button onClick={submit} disabled={busy} className="btn-gold w-full py-3">{busy ? "لحظات…" : "دخول"}</button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -202,6 +227,7 @@ export default function AdminApp() {
     finance: FinanceSection,
     quality: QualitySection,
     content: ContentSection,
+    platform: PlatformSection,
     promotions: PromotionsSection,
     reports: ReportsSection,
     settings: SettingsSection,

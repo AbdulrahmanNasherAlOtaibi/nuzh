@@ -2,6 +2,30 @@ import crypto from "node:crypto";
 import type { Request, Response, NextFunction, Router } from "express";
 import express from "express";
 import { db, now, logActivity } from "./db.ts";
+import { generateTotpSecret, verifyTotp, otpauthUrl } from "./totp.ts";
+
+// ---------- حد محاولات الدخول (حماية من التخمين) ----------
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+function tooManyAttempts(key: string): boolean {
+  const t = Date.now();
+  const a = loginAttempts.get(key);
+  if (!a || t > a.resetAt) {
+    loginAttempts.set(key, { count: 1, resetAt: t + 10 * 60 * 1000 });
+    return false;
+  }
+  a.count++;
+  return a.count > 8;
+}
+function clearAttempts(key: string) {
+  loginAttempts.delete(key);
+}
+
+// ---------- جلسات OTP المعلقة (بين كلمة المرور والرمز) ----------
+const pendingOtp = new Map<string, { userId: number; expires: number; tries: number }>();
+function prunePendingOtp() {
+  const t = Date.now();
+  for (const [k, v] of pendingOtp) if (t > v.expires) pendingOtp.delete(k);
+}
 
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -27,6 +51,7 @@ export interface AuthedUser {
   city: string;
   gender: string;
   must_change_password: number;
+  totp_enabled: number;
 }
 
 declare module "express-serve-static-core" {
@@ -45,7 +70,7 @@ export function attachUser(req: Request, _res: Response, next: NextFunction) {
     const token = decodeURIComponent(match.split("=")[1] || "");
     const row = db
       .prepare(
-        `SELECT u.id, u.name, u.email, u.phone, u.role, u.status, u.avatar, u.city, u.gender, u.must_change_password
+        `SELECT u.id, u.name, u.email, u.phone, u.role, u.status, u.avatar, u.city, u.gender, u.must_change_password, u.totp_enabled
          FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?`
       )
       .get(token) as AuthedUser | undefined;
@@ -94,6 +119,7 @@ function publicUser(u: any) {
     id: u.id, name: u.name, email: u.email, phone: u.phone, role: u.role,
     avatar: u.avatar, city: u.city, gender: u.gender,
     mustChangePassword: !!u.must_change_password,
+    totpEnabled: !!u.totp_enabled,
   };
 }
 
@@ -142,16 +168,80 @@ export function authRouter(): Router {
 
   r.post("/login", (req, res) => {
     const { email, password } = req.body || {};
-    const u = db.prepare("SELECT * FROM users WHERE email=?").get(String(email || "").toLowerCase()) as any;
+    const normEmail = String(email || "").toLowerCase();
+    const rateKey = `${req.ip || "?"}:${normEmail}`;
+    if (tooManyAttempts(rateKey))
+      return res.status(429).json({ error: "محاولات كثيرة — انتظر 10 دقائق ثم حاول مجدداً" });
+    const u = db.prepare("SELECT * FROM users WHERE email=?").get(normEmail) as any;
     const ok = !!u && verifyPassword(String(password || ""), u.password);
     db.prepare("INSERT INTO logins (email,user_id,ok,ip,created_at) VALUES (?,?,?,?,?)").run(
-      String(email || "").toLowerCase(), u?.id ?? null, ok ? 1 : 0, req.ip || "", now()
+      normEmail, u?.id ?? null, ok ? 1 : 0, req.ip || "", now()
     );
     if (!ok) return res.status(401).json({ error: "بيانات الدخول غير صحيحة" });
     if (u.status === "banned") return res.status(403).json({ error: "هذا الحساب محظور" });
     if (u.status === "disabled") return res.status(403).json({ error: "هذا الحساب معطل" });
+    clearAttempts(rateKey);
+    // التحقق الثنائي: لا جلسة قبل رمز OTP
+    if (u.totp_enabled) {
+      prunePendingOtp();
+      const token = crypto.randomBytes(24).toString("hex");
+      pendingOtp.set(token, { userId: u.id, expires: Date.now() + 5 * 60 * 1000, tries: 0 });
+      return res.json({ otpRequired: true, pendingToken: token });
+    }
     createSession(res, u.id);
     res.json({ user: publicUser(u) });
+  });
+
+  // الخطوة الثانية من الدخول: رمز تطبيق المصادقة
+  r.post("/login/otp", (req, res) => {
+    const { pendingToken, code } = req.body || {};
+    prunePendingOtp();
+    const pending = pendingOtp.get(String(pendingToken || ""));
+    if (!pending) return res.status(401).json({ error: "انتهت مهلة التحقق — سجّل الدخول من جديد" });
+    pending.tries++;
+    if (pending.tries > 5) {
+      pendingOtp.delete(String(pendingToken));
+      return res.status(429).json({ error: "محاولات كثيرة — سجّل الدخول من جديد" });
+    }
+    const u = db.prepare("SELECT * FROM users WHERE id=?").get(pending.userId) as any;
+    if (!u || !verifyTotp(u.totp_secret, String(code || "")))
+      return res.status(401).json({ error: "الرمز غير صحيح" });
+    pendingOtp.delete(String(pendingToken));
+    createSession(res, u.id);
+    logActivity(u.name, "دخول موثق بالتحقق الثنائي");
+    res.json({ user: publicUser(u) });
+  });
+
+  // ---------- إدارة التحقق الثنائي ----------
+  r.post("/2fa/setup", requireUser, (req, res) => {
+    const u = db.prepare("SELECT * FROM users WHERE id=?").get(req.user!.id) as any;
+    if (u.totp_enabled) return res.status(400).json({ error: "التحقق الثنائي مفعل مسبقاً" });
+    const secret = generateTotpSecret();
+    db.prepare("UPDATE users SET totp_secret=? WHERE id=?").run(secret, u.id);
+    res.json({ secret, otpauth: otpauthUrl(u.email, secret) });
+  });
+
+  r.post("/2fa/enable", requireUser, (req, res) => {
+    const u = db.prepare("SELECT * FROM users WHERE id=?").get(req.user!.id) as any;
+    if (u.totp_enabled) return res.status(400).json({ error: "التحقق الثنائي مفعل مسبقاً" });
+    if (!u.totp_secret) return res.status(400).json({ error: "ابدأ بخطوة الإعداد أولاً" });
+    if (!verifyTotp(u.totp_secret, String(req.body?.code || "")))
+      return res.status(400).json({ error: "الرمز غير صحيح — تأكد من تطبيق المصادقة وحاول مجدداً" });
+    db.prepare("UPDATE users SET totp_enabled=1 WHERE id=?").run(u.id);
+    logActivity(u.name, "فعّل التحقق الثنائي (OTP)");
+    res.json({ ok: true });
+  });
+
+  r.post("/2fa/disable", requireUser, (req, res) => {
+    const u = db.prepare("SELECT * FROM users WHERE id=?").get(req.user!.id) as any;
+    if (!u.totp_enabled) return res.status(400).json({ error: "التحقق الثنائي غير مفعل" });
+    if (!verifyPassword(String(req.body?.password || ""), u.password))
+      return res.status(400).json({ error: "كلمة المرور غير صحيحة" });
+    if (!verifyTotp(u.totp_secret, String(req.body?.code || "")))
+      return res.status(400).json({ error: "رمز التحقق غير صحيح" });
+    db.prepare("UPDATE users SET totp_enabled=0, totp_secret='' WHERE id=?").run(u.id);
+    logActivity(u.name, "عطّل التحقق الثنائي");
+    res.json({ ok: true });
   });
 
   r.post("/logout", (req, res) => {
@@ -164,7 +254,7 @@ export function authRouter(): Router {
 
   r.get("/me", (req, res) => {
     if (!req.user) return res.json({ user: null });
-    res.json({ user: req.user, provider: req.provider || null });
+    res.json({ user: publicUser(req.user), provider: req.provider || null });
   });
 
   r.put("/profile", requireUser, (req, res) => {

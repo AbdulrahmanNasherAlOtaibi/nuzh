@@ -234,6 +234,11 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 `);
 
+// ترقيات تدريجية للمخطط — تعمل بأمان على قواعد قائمة دون المساس بالبيانات
+const userCols = (db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name);
+if (!userCols.includes("totp_secret")) db.exec("ALTER TABLE users ADD COLUMN totp_secret TEXT DEFAULT ''");
+if (!userCols.includes("totp_enabled")) db.exec("ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0");
+
 export const now = () => new Date().toISOString();
 
 export function getSetting<T>(key: string, fallback: T): T {

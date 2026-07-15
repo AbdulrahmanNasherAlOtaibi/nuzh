@@ -459,10 +459,128 @@ export function adminRouter(): Router {
   });
 
   r.put("/settings/:key", (req, res) => {
-    if (!["general", "payment", "security", "about", "faq", "userGuide", "platformAchievements"].includes(req.params.key))
+    if (!["general", "payment", "security", "about", "faq", "userGuide", "platformAchievements", "map"].includes(req.params.key))
       return res.status(400).json({ error: "مفتاح غير معروف" });
     setSetting(req.params.key, req.body);
     logActivity("الأدمن", `تحديث إعدادات ${req.params.key}`);
+    res.json({ ok: true });
+  });
+
+  // ---------- المحميات والخريطة التفاعلية ----------
+  r.get("/reserves", (_req, res) => {
+    const reserves = (db.prepare("SELECT * FROM reserves ORDER BY id").all() as any[]).map((x) => ({
+      ...x, animals: JSON.parse(x.animals || "[]"), zones: JSON.parse(x.zones || "[]"),
+    }));
+    res.json({ reserves, map: getSetting("map", { style: "satellite" }) });
+  });
+
+  function parseReserveBody(b: any) {
+    const zones = Array.isArray(b.zones) ? b.zones : [];
+    for (const z of zones) {
+      if (!z.name || !["allowed", "permit", "forbidden"].includes(z.type) || !Array.isArray(z.polygon) || z.polygon.length < 3)
+        throw new Error("كل منطقة تحتاج: اسم، تصنيف (allowed/permit/forbidden)، ومضلع من 3 نقاط على الأقل");
+    }
+    return {
+      name: String(b.name || "").trim(),
+      description: String(b.description || ""),
+      area_km2: Number(b.area_km2) || 0,
+      animals: JSON.stringify(Array.isArray(b.animals) ? b.animals : []),
+      center_lat: Number(b.center_lat) || 24.9,
+      center_lng: Number(b.center_lng) || 46.6,
+      zoom: Number(b.zoom) || 8,
+      zones: JSON.stringify(zones),
+      visitors: Number(b.visitors) || 0,
+      best_time: String(b.best_time || ""),
+    };
+  }
+
+  r.post("/reserves", (req, res) => {
+    try {
+      const v = parseReserveBody(req.body || {});
+      if (!v.name) return res.status(400).json({ error: "اسم المحمية مطلوب" });
+      const info = db.prepare(
+        "INSERT INTO reserves (name,description,area_km2,animals,center_lat,center_lng,zoom,zones,visitors,best_time) VALUES (?,?,?,?,?,?,?,?,?,?)"
+      ).run(v.name, v.description, v.area_km2, v.animals, v.center_lat, v.center_lng, v.zoom, v.zones, v.visitors, v.best_time);
+      logActivity("الأدمن", `أضاف محمية: ${v.name}`);
+      res.json({ id: Number(info.lastInsertRowid) });
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  r.put("/reserves/:id", (req, res) => {
+    const cur = db.prepare("SELECT * FROM reserves WHERE id=?").get(req.params.id) as any;
+    if (!cur) return res.status(404).json({ error: "المحمية غير موجودة" });
+    try {
+      const b = { ...cur, animals: JSON.parse(cur.animals || "[]"), zones: JSON.parse(cur.zones || "[]"), ...(req.body || {}) };
+      const v = parseReserveBody(b);
+      db.prepare(
+        "UPDATE reserves SET name=?,description=?,area_km2=?,animals=?,center_lat=?,center_lng=?,zoom=?,zones=?,visitors=?,best_time=? WHERE id=?"
+      ).run(v.name, v.description, v.area_km2, v.animals, v.center_lat, v.center_lng, v.zoom, v.zones, v.visitors, v.best_time, cur.id);
+      logActivity("الأدمن", `حدّث محمية: ${v.name}`);
+      res.json({ ok: true });
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  r.delete("/reserves/:id", (req, res) => {
+    const cur = db.prepare("SELECT name FROM reserves WHERE id=?").get(req.params.id) as any;
+    if (!cur) return res.status(404).json({ error: "المحمية غير موجودة" });
+    db.prepare("DELETE FROM reserves WHERE id=?").run(req.params.id);
+    logActivity("الأدمن", `حذف محمية: ${cur.name}`);
+    res.json({ ok: true });
+  });
+
+  // ---------- الشركاء ----------
+  r.get("/partners", (_req, res) => {
+    res.json({ partners: db.prepare("SELECT * FROM partners ORDER BY sort").all() });
+  });
+
+  r.post("/partners", (req, res) => {
+    const { name, kind = "شريك نجاح", logo = "", sort = 0 } = req.body || {};
+    if (!name) return res.status(400).json({ error: "اسم الشريك مطلوب" });
+    const info = db.prepare("INSERT INTO partners (name,kind,logo,sort) VALUES (?,?,?,?)").run(name, kind, logo, sort);
+    logActivity("الأدمن", `أضاف شريكاً: ${name}`);
+    res.json({ id: Number(info.lastInsertRowid) });
+  });
+
+  r.put("/partners/:id", (req, res) => {
+    const p = db.prepare("SELECT * FROM partners WHERE id=?").get(req.params.id) as any;
+    if (!p) return res.status(404).json({ error: "غير موجود" });
+    const b = req.body || {};
+    db.prepare("UPDATE partners SET name=?, kind=?, logo=?, sort=? WHERE id=?").run(b.name ?? p.name, b.kind ?? p.kind, b.logo ?? p.logo, b.sort ?? p.sort, p.id);
+    res.json({ ok: true });
+  });
+
+  r.delete("/partners/:id", (req, res) => {
+    db.prepare("DELETE FROM partners WHERE id=?").run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // ---------- كتالوج الإنجازات ----------
+  r.get("/achievements", (_req, res) => {
+    res.json({ achievements: db.prepare("SELECT * FROM achievements ORDER BY id").all() });
+  });
+
+  r.post("/achievements", (req, res) => {
+    const { code, title, description = "", icon = "🏅", metric, target = 1 } = req.body || {};
+    if (!code || !title || !metric) return res.status(400).json({ error: "أكمل: الكود، العنوان، والمقياس" });
+    const exists = db.prepare("SELECT id FROM achievements WHERE code=?").get(code);
+    if (exists) return res.status(409).json({ error: "هذا الكود مستخدم مسبقاً" });
+    const info = db.prepare("INSERT INTO achievements (code,title,description,icon,metric,target) VALUES (?,?,?,?,?,?)").run(code, title, description, icon, metric, Number(target) || 1);
+    logActivity("الأدمن", `أضاف إنجازاً: ${title}`);
+    res.json({ id: Number(info.lastInsertRowid) });
+  });
+
+  r.put("/achievements/:id", (req, res) => {
+    const a = db.prepare("SELECT * FROM achievements WHERE id=?").get(req.params.id) as any;
+    if (!a) return res.status(404).json({ error: "غير موجود" });
+    const b = req.body || {};
+    db.prepare("UPDATE achievements SET title=?, description=?, icon=?, metric=?, target=? WHERE id=?").run(
+      b.title ?? a.title, b.description ?? a.description, b.icon ?? a.icon, b.metric ?? a.metric, Number(b.target ?? a.target) || 1, a.id
+    );
+    res.json({ ok: true });
+  });
+
+  r.delete("/achievements/:id", (req, res) => {
+    db.prepare("DELETE FROM achievements WHERE id=?").run(req.params.id);
     res.json({ ok: true });
   });
 

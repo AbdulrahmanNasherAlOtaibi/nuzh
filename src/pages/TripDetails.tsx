@@ -7,22 +7,27 @@ import type { Trip } from "../components/TripCard";
 
 interface Review { id: number; user_name: string; rating: number; text: string; reply: string; created_at: string }
 
-const WHATSAPP_NUMBER = "966557517267";
+// احتياطي فقط — الرقم الفعلي يُدار من لوحة التحكم (الإعدادات العامة)
+const WHATSAPP_FALLBACK = "966557517267";
 
 export default function TripDetails() {
   const [, params] = useRoute("/trips/:id");
   const [, nav] = useLocation();
   const { t, lang } = useApp();
   const [data, setData] = useState<{ trip: Trip & { child_price: number; capacity: number }; reviews: Review[]; reserve: any } | null>(null);
+  const [whatsapp, setWhatsapp] = useState(WHATSAPP_FALLBACK);
 
   useEffect(() => {
     get(`/trips/${params?.id}`).then(setData).catch(() => nav("/"));
   }, [params?.id]);
+  useEffect(() => {
+    get("/public-settings").then((d) => { if (d?.general?.whatsapp) setWhatsapp(String(d.general.whatsapp)); }).catch(() => {});
+  }, []);
 
   if (!data) return <Spinner />;
   const { trip, reviews, reserve } = data;
   const childPrice = trip.child_price || Math.round(trip.price / 2);
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`مرحباً، أبي أحجز رحلة: ${trip.title}`)}`;
+  const whatsappUrl = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`مرحباً، أبي أحجز رحلة: ${trip.title}`)}`;
 
   return (
     <div className="max-w-3xl mx-auto pb-6">

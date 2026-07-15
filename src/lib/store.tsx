@@ -7,6 +7,7 @@ export type Theme = "dark" | "light" | "system";
 export interface User {
   id: number; name: string; email: string; phone: string; role: string;
   avatar: string; city: string; gender: string; mustChangePassword?: boolean;
+  totpEnabled?: boolean;
 }
 export interface ProviderInfo { id: number; type: string; name: string; status: string }
 

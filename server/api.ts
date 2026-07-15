@@ -114,6 +114,7 @@ export function apiRouter(): Router {
   r.get("/public-settings", (_req, res) => {
     res.json({
       general: getSetting("general", {}),
+      map: getSetting("map", { style: "satellite" }),
       about: getSetting("about", ""),
       faq: getSetting("faq", []),
       userGuide: getSetting("userGuide", []),
